@@ -1785,6 +1785,7 @@ void VIOManager::dumpDataForColmap()
 
 void VIOManager::processFrame(cv::Mat &img, vector<pointWithVar> &pg, const unordered_map<VOXEL_LOCATION, VoxelOctoTree *> &feat_map, double img_time)
 {
+  img_origin = img.clone();
   if (width != img.cols || height != img.rows)
   {
     if (img.empty()) printf("[ VIO ] Empty Image!\n");

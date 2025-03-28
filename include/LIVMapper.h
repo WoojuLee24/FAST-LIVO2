@@ -133,7 +133,7 @@ public:
   PointCloudXYZI::Ptr feats_undistort;
   PointCloudXYZI::Ptr feats_down_body;
   PointCloudXYZI::Ptr feats_down_world;
-  PointCloudXYZI::Ptr pcl_w_wait_pub;
+  PointCloudXYZI::Ptr pcl_w_wait_pub, pcl_l_wait_pub;
   PointCloudXYZI::Ptr pcl_wait_pub;
   PointCloudXYZRGB::Ptr pcl_wait_save;
   PointCloudXYZI::Ptr pcl_wait_save_intensity;
@@ -163,7 +163,7 @@ public:
   ros::Subscriber sub_pcl;
   ros::Subscriber sub_imu;
   ros::Subscriber sub_img;
-  ros::Publisher pubLaserCloudFullRes;
+  ros::Publisher pubLaserCloudFullRes, pubLaserCloudFullResBody;
   ros::Publisher pubNormal;
   ros::Publisher pubSubVisualMap;
   ros::Publisher pubLaserCloudEffect;
@@ -173,7 +173,7 @@ public:
   ros::Publisher pubLaserCloudDyn;
   ros::Publisher pubLaserCloudDynRmed;
   ros::Publisher pubLaserCloudDynDbg;
-  image_transport::Publisher pubImage;
+  image_transport::Publisher pubImage, pubOriginImage;
   ros::Publisher mavros_pose_publisher;
   ros::Timer imu_prop_timer;
 
