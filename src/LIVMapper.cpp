@@ -330,13 +330,13 @@ void LIVMapper::handleVIO()
   // body point cloud
   sensor_msgs::PointCloud2 laserCloudmsg;
   pcl::toROSMsg(*pcl_l_wait_pub, laserCloudmsg);
-  laserCloudmsg.header.stamp = ros::Time::now(); //.fromSec(last_timestamp_lidar);
+  laserCloudmsg.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
   laserCloudmsg.header.frame_id = "camera_init";
   pubLaserCloudFullResBody.publish(laserCloudmsg);
   // full res image
   cv::Mat img_origin = vio_manager->img_origin;
   cv_bridge::CvImage out_msg;
-  out_msg.header.stamp = ros::Time::now();
+  out_msg.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
   // out_msg.header.frame_id = "camera_init";
   out_msg.encoding = sensor_msgs::image_encodings::BGR8;
   out_msg.image = img_origin;
@@ -1295,7 +1295,7 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
 {
   odomAftMapped.header.frame_id = "camera_init";
   odomAftMapped.child_frame_id = "aft_mapped";
-  odomAftMapped.header.stamp = ros::Time::now(); //.ros::Time()fromSec(last_timestamp_lidar);
+  odomAftMapped.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
   set_posestamp(odomAftMapped.pose.pose);
 
   static tf::TransformBroadcaster br;
