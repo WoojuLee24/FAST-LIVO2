@@ -329,11 +329,11 @@ void LIVMapper::handleVIO()
 
   // For neural mapping
   // body point cloud
-  sensor_msgs::PointCloud2 laserCloudmsg;
-  pcl::toROSMsg(*pcl_l_wait_pub, laserCloudmsg);
-  laserCloudmsg.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
-  laserCloudmsg.header.frame_id = "camera_init";
-  pubLaserCloudFullResBody.publish(laserCloudmsg);
+  // sensor_msgs::PointCloud2 laserCloudmsg;
+  // pcl::toROSMsg(*pcl_l_wait_pub, laserCloudmsg);
+  // laserCloudmsg.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
+  // laserCloudmsg.header.frame_id = "camera_init";
+  // pubLaserCloudFullResBody.publish(laserCloudmsg);
   // full res image
   cv::Mat img_origin = vio_manager->img_origin;
   cv_bridge::CvImage out_msg;
@@ -458,6 +458,14 @@ void LIVMapper::handleLIO()
   }
   *pcl_w_wait_pub = *laserCloudWorld;
   *pcl_l_wait_pub = *laserCloudFullRes;
+
+  // For neural mapping
+  // body point cloud
+  sensor_msgs::PointCloud2 laserCloudmsg;
+  pcl::toROSMsg(*pcl_l_wait_pub, laserCloudmsg);
+  laserCloudmsg.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
+  laserCloudmsg.header.frame_id = "camera_init";
+  pubLaserCloudFullResBody.publish(laserCloudmsg);
 
   if (!img_en) publish_frame_world(pubLaserCloudFullRes, vio_manager);
   if (pub_effect_point_en) publish_effect_world(pubLaserCloudEffect, voxelmap_manager->ptpl_list_);
