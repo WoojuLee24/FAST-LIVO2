@@ -470,6 +470,7 @@ void LIVMapper::handleLIO()
   laserCloudmsg.header.frame_id = "camera_init";
   pubLaserCloudFullResBody.publish(laserCloudmsg);
 
+  publish_odometry(pubOdomAftMapped);
   publish_odometry_lidar(pubOdomAftMappedLiDAR);
 
   if (!img_en) publish_frame_world(pubLaserCloudFullRes, vio_manager);
@@ -1362,10 +1363,10 @@ void LIVMapper::publish_odometry_cam(const ros::Publisher &pubOdomAftMapped)
 void LIVMapper::publish_odometry_lidar(const ros::Publisher &pubOdomAftMapped)
 {
   // Compute LiDAR pose in world frame
-  // R_w_l = R_w_i * R_i_l = rot_end * Rli
-  // t_w_l = t_w_i + R_w_i * t_i_l = pos_end + rot_end * Pli
-  M3D R_w_l = _state.rot_end * vio_manager->Rli;
-  V3D t_w_l = _state.pos_end + _state.rot_end * vio_manager->Pli;
+  // R_w_l = R_w_i * R_i_l
+  // t_w_l = t_w_i + R_w_i * t_i_l
+  M3D R_w_l = _state.rot_end * extR;
+  V3D t_w_l = _state.pos_end + _state.rot_end * extT;
   
   Eigen::Quaterniond q_w_l(R_w_l);
   
