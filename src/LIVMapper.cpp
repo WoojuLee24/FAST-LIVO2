@@ -199,6 +199,8 @@ void LIVMapper::initializeSubscribersAndPublishers(ros::NodeHandle &nh, image_tr
   pubLaserCloudEffect = nh.advertise<sensor_msgs::PointCloud2>("/cloud_effected", 100);
   pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/Laser_map", 100);
   pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init", 10);
+  pubOdomAftMappedCam = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init_cam", 10);
+  pubOdomAftMappedLiDAR = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init_lidar", 10);
   pubPath = nh.advertise<nav_msgs::Path>("/path", 10);
   plane_pub = nh.advertise<visualization_msgs::Marker>("/planner_normal", 1);
   voxel_pub = nh.advertise<visualization_msgs::MarkerArray>("/voxels", 1);
@@ -343,6 +345,7 @@ void LIVMapper::handleVIO()
   out_msg.image = img_origin;
   pubOriginImage.publish(out_msg.toImageMsg());
   publish_odometry(pubOdomAftMapped);
+  publish_odometry_cam(pubOdomAftMappedCam);
 
   euler_cur = RotMtoEuler(_state.rot_end);
   fout_out << std::setw(20) << LidarMeasures.last_lio_update_time - _first_lidar_time << " " << euler_cur.transpose() * 57.3 << " "
@@ -466,6 +469,8 @@ void LIVMapper::handleLIO()
   laserCloudmsg.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
   laserCloudmsg.header.frame_id = "camera_init";
   pubLaserCloudFullResBody.publish(laserCloudmsg);
+
+  publish_odometry_lidar(pubOdomAftMappedLiDAR);
 
   if (!img_en) publish_frame_world(pubLaserCloudFullRes, vio_manager);
   if (pub_effect_point_en) publish_effect_world(pubLaserCloudEffect, voxelmap_manager->ptpl_list_);
@@ -1317,6 +1322,76 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
   transform.setRotation(q);
   br.sendTransform( tf::StampedTransform(transform, odomAftMapped.header.stamp, "camera_init", "aft_mapped") );
   pubOdomAftMapped.publish(odomAftMapped);
+}
+
+void LIVMapper::publish_odometry_cam(const ros::Publisher &pubOdomAftMapped)
+{
+  // Compute camera pose in world frame
+  // R_w_c = R_w_i * R_i_c = rot_end * Rci^T
+  // t_w_c = t_w_i + R_w_i * t_i_c, where t_i_c = -Rci^T * Pci
+  M3D R_w_c = _state.rot_end * vio_manager->Rci.transpose();
+  V3D t_w_c = _state.pos_end - _state.rot_end * vio_manager->Rci.transpose() * vio_manager->Pci;
+  
+  Eigen::Quaterniond q_w_c(R_w_c);
+  
+  nav_msgs::Odometry camOdomAftMapped;
+  camOdomAftMapped.header.frame_id = "camera_init";
+  camOdomAftMapped.child_frame_id = "camera";
+  camOdomAftMapped.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
+  camOdomAftMapped.pose.pose.position.x = t_w_c(0);
+  camOdomAftMapped.pose.pose.position.y = t_w_c(1);
+  camOdomAftMapped.pose.pose.position.z = t_w_c(2);
+  camOdomAftMapped.pose.pose.orientation.x = q_w_c.x();
+  camOdomAftMapped.pose.pose.orientation.y = q_w_c.y();
+  camOdomAftMapped.pose.pose.orientation.z = q_w_c.z();
+  camOdomAftMapped.pose.pose.orientation.w = q_w_c.w();
+
+  static tf::TransformBroadcaster br;
+  tf::Transform transform;
+  tf::Quaternion q;
+  transform.setOrigin(tf::Vector3(t_w_c(0), t_w_c(1), t_w_c(2)));
+  q.setW(q_w_c.w());
+  q.setX(q_w_c.x());
+  q.setY(q_w_c.y());
+  q.setZ(q_w_c.z());
+  transform.setRotation(q);
+  br.sendTransform(tf::StampedTransform(transform, camOdomAftMapped.header.stamp, "camera_init", "camera"));
+  pubOdomAftMapped.publish(camOdomAftMapped);
+}
+
+void LIVMapper::publish_odometry_lidar(const ros::Publisher &pubOdomAftMapped)
+{
+  // Compute LiDAR pose in world frame
+  // R_w_l = R_w_i * R_i_l = rot_end * Rli
+  // t_w_l = t_w_i + R_w_i * t_i_l = pos_end + rot_end * Pli
+  M3D R_w_l = _state.rot_end * vio_manager->Rli;
+  V3D t_w_l = _state.pos_end + _state.rot_end * vio_manager->Pli;
+  
+  Eigen::Quaterniond q_w_l(R_w_l);
+  
+  nav_msgs::Odometry lidarOdomAftMapped;
+  lidarOdomAftMapped.header.frame_id = "camera_init";
+  lidarOdomAftMapped.child_frame_id = "lidar";
+  lidarOdomAftMapped.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
+  lidarOdomAftMapped.pose.pose.position.x = t_w_l(0);
+  lidarOdomAftMapped.pose.pose.position.y = t_w_l(1);
+  lidarOdomAftMapped.pose.pose.position.z = t_w_l(2);
+  lidarOdomAftMapped.pose.pose.orientation.x = q_w_l.x();
+  lidarOdomAftMapped.pose.pose.orientation.y = q_w_l.y();
+  lidarOdomAftMapped.pose.pose.orientation.z = q_w_l.z();
+  lidarOdomAftMapped.pose.pose.orientation.w = q_w_l.w();
+
+  static tf::TransformBroadcaster br;
+  tf::Transform transform;
+  tf::Quaternion q;
+  transform.setOrigin(tf::Vector3(t_w_l(0), t_w_l(1), t_w_l(2)));
+  q.setW(q_w_l.w());
+  q.setX(q_w_l.x());
+  q.setY(q_w_l.y());
+  q.setZ(q_w_l.z());
+  transform.setRotation(q);
+  br.sendTransform(tf::StampedTransform(transform, lidarOdomAftMapped.header.stamp, "camera_init", "lidar"));
+  pubOdomAftMapped.publish(lidarOdomAftMapped);
 }
 
 void LIVMapper::publish_mavros(const ros::Publisher &mavros_pose_publisher)
