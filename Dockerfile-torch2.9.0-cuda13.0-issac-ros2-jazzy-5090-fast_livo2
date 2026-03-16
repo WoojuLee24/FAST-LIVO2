@@ -1,0 +1,72 @@
+# 1. Base Image
+FROM nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_d3e84470d576702a380478a513fb3fc6-amd64
+
+# 2. 시스템 패키지 설치 (README 2.1 ~ 2.2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    vim \
+    build-essential \
+    cmake \
+    python3-pip \
+    # PCL >= 1.8 (README 2.2)
+    libpcl-dev \
+    ros-jazzy-pcl-ros \
+    ros-jazzy-pcl-conversions \
+    # Eigen >= 3.3.4 (README 2.2)
+    libeigen3-dev \
+    # OpenCV >= 4.2 (README 2.2)
+    libopencv-dev \
+    python3-opencv \
+    ros-jazzy-cv-bridge \
+    ros-jazzy-image-transport \
+    ros-jazzy-image-transport-plugins \
+    # Sophus — binary install (README 2.3)
+    ros-jazzy-sophus \
+    # Other ROS2 runtime deps
+    ros-jazzy-tf2-ros \
+    ros-jazzy-nav-msgs \
+    ros-jazzy-visualization-msgs \
+    ros-jazzy-sensor-msgs \
+    ros-jazzy-geometry-msgs \
+    # Boost thread + fmt (CMakeLists deps)
+    libboost-thread-dev \
+    libfmt-dev \
+    libopenmpi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. 환경 변수 설정 (중요: 빌드 에러 해결의 핵심)
+# pip 설치를 허용하고, MPI 관련 잘못된 경로 참조를 방지합니다.
+ENV CMAKE_PREFIX_PATH="/opt/ros/jazzy"
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV MPI_HOME=/usr/lib/x86_64-linux-gnu/openmpi
+
+# 4. Python tools — rosbag ROS1→ROS2 conversion (README 4)
+RUN pip3 install --no-cache-dir rosbags --break-system-packages
+
+# 5. Create ROS2 workspace
+WORKDIR /gd_mapping/src
+
+# 6. Build entire workspace
+WORKDIR /gd_mapping
+RUN /bin/bash -c "\
+    source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install --continue-on-error"
+
+# 7. Persistent environment setup
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
+    echo "source /gd_mapping/install/setup.bash" >> ~/.bashrc
+
+WORKDIR /gd_mapping
+
+## 7. Clone Vikit — ROS2 compatible fork (README 2.4)
+#RUN git clone https://github.com/Robotic-Developer-Road/rpg_vikit.git
+
+## 8. Clone livox_ros_driver2 (README 2.5)
+#RUN git clone https://github.com/Livox-SDK/livox_ros_driver2.git \
+#    && cd livox_ros_driver2 \
+#    && git checkout v2.3.0
+
+## 9. Clone FAST-LIVO2 (README 3)
+#RUN git clone https://github.com/Robotic-Developer-Road/FAST-LIVO2.git
+
+
