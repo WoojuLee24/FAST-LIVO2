@@ -343,6 +343,9 @@ void LIVMapper::handleVIO()
   // pubLaserCloudFullResBody.publish(laserCloudmsg);
   // full res image
   cv::Mat img_origin = vio_manager->img_origin;
+  double scale = vio_manager->image_resize_factor;
+  if (scale != 1.0)
+    cv::resize(img_origin, img_origin, cv::Size(), scale, scale, CV_INTER_LINEAR);
   cv_bridge::CvImage out_msg;
   out_msg.header.stamp = ros::Time().fromSec(LidarMeasures.last_lio_update_time);
   // out_msg.header.frame_id = "camera_init";
@@ -475,7 +478,6 @@ void LIVMapper::handleLIO()
   laserCloudmsg.header.frame_id = "camera_init";
   pubLaserCloudFullResBody.publish(laserCloudmsg);
 
-  publish_odometry(pubOdomAftMapped);
   publish_odometry_lidar(pubOdomAftMappedLiDAR);
 
   publish_frame_world(pubLaserCloudFullRes, vio_manager);
