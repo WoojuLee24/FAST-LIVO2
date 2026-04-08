@@ -1,0 +1,15 @@
+<launch>
+<!-- Scout + Ouster OS1-64 + RealSense colour camera, Noeun station -->
+
+	<arg name="rviz" default="true" />
+
+	<rosparam command="load" file="$(find fast_livo)/config/scout_noeun_tuned_station.yaml" />
+
+	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
+		<rosparam file="$(find fast_livo)/config/camera_scout_tuned.yaml" />
+	</node>
+
+	<group if="$(arg rviz)">
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fast_livo)/rviz_cfg/scout_noeun.rviz" />
+	</group>
+</launch>
