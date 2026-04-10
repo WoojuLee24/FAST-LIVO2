@@ -30,11 +30,17 @@ dist = np.array([-0.05756863206624985,
                   0.0006150348926894367,
                   0.0007578100194223225], dtype=np.float64)
 
+# # Extrinsics: LiDAR → camera  (Tr_velo_to_cam)
+# Rcl = np.array([[ 0.002736, -0.999996,  0.000435],
+#                 [-0.254728, -0.001118, -0.967012],
+#                 [ 0.967009,  0.002535, -0.254730]], dtype=np.float64)
+# Pcl = np.array([0.001859, -0.022877, -0.073405], dtype=np.float64)  # metres
+
 # Extrinsics: LiDAR → camera  (Tr_velo_to_cam)
-Rcl = np.array([[ 0.002736, -0.999996,  0.000435],
-                [-0.254728, -0.001118, -0.967012],
-                [ 0.967009,  0.002535, -0.254730]], dtype=np.float64)
-Pcl = np.array([0.001859, -0.022877, -0.073405], dtype=np.float64)  # metres
+Rcl = np.array([[-0.024857, -0.999687, 0.002943],
+                [-0.233652, 0.002947, -0.972315],
+                [0.972002, -0.024857, -0.233652]], dtype=np.float64)
+Pcl = np.array([-0.000026, -0.021708, -0.098460], dtype=np.float64)  # metres
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -114,7 +120,8 @@ def project_lidar(cloud_msg, img):
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-BAG  = '/ws/data/nouen/scout/ros1_converted/my_camera_bag_20260317_070913.bag'
+# BAG  = '/ws/data/nouen/scout/ros1_converted/my_camera_bag_20260317_070913.bag'
+BAG  = '/ws/data/nouen/scout/0bags_ros1/my_camera_bag_20260317_070913_sync.bag'
 OUT  = '/ws/data/nouen/scout/projection_output'
 N_SAVE = 10   # number of frames to save
 
