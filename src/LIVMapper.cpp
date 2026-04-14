@@ -874,9 +874,25 @@ void LIVMapper::imu_cbk(const sensor_msgs::msg::Imu::ConstSharedPtr &msg_in)
   if (last_timestamp_imu > 0.0 && timestamp > last_timestamp_imu + 0.2)
   {
     RCLCPP_WARN(this->node->get_logger(), "imu time stamp Jumps %0.4lf seconds \n", timestamp - last_timestamp_imu);
-    mtx_buffer.unlock();
-    sig_buffer.notify_all();
-    return;
+    // mtx_buffer.unlock();
+    // sig_buffer.notify_all();
+    // return;
+    if (ros_driver_fix_en)
+    {
+      // LiDAR timestamp shifted, which corrupts the correction offset.
+      // Reset IMU baseline and re-initialize ImuProcess so stale state
+      // does not cause divergence on the next integration.
+      RCLCPP_WARN(this->node->get_logger(), "ros_driver_fix_en: resetting IMU timestamp baseline\n");
+      imu_buffer.clear();
+      last_timestamp_imu = timestamp;
+      p_imu->Reset();
+    }
+    else
+    {
+      mtx_buffer.unlock();
+      sig_buffer.notify_all();
+      return;
+    }
   }
 
   last_timestamp_imu = timestamp;
