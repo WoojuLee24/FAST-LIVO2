@@ -181,6 +181,8 @@ public:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudDynRmed;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudDynDbg;
   image_transport::Publisher pubImage;
+  image_transport::Publisher pubOriginImage;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFullResBody;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr mavros_pose_publisher;
   rclcpp::TimerBase::SharedPtr imu_prop_timer;
   rclcpp::Node::SharedPtr node;

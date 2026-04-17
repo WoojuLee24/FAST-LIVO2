@@ -280,6 +280,8 @@ void LIVMapper::initializeSubscribersAndPublishers(rclcpp::Node::SharedPtr &node
   pubLaserCloudDynDbg = this->node->create_publisher<sensor_msgs::msg::PointCloud2>("/dyn_obj_dbg_hist", 100);
   mavros_pose_publisher = this->node->create_publisher<geometry_msgs::msg::PoseStamped>("/mavros/vision_pose/pose", 10);
   pubImage = it.advertise("/rgb_img", 1);
+  pubOriginImage = it.advertise("/origin_img", 1);
+  pubLaserCloudFullResBody = this->node->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_registered_body", 100);
   pubImuPropOdom = this->node->create_publisher<nav_msgs::msg::Odometry>("/LIVO2/imu_propagate", 10000);
   imu_prop_timer = this->node->create_wall_timer(0.004s, std::bind(&LIVMapper::imu_prop_callback, this));
   voxelmap_manager->voxel_map_pub_= this->node->create_publisher<visualization_msgs::msg::MarkerArray>("/planes", 10000);
@@ -396,6 +398,18 @@ void LIVMapper::handleVIO()
   publish_frame_world(pubLaserCloudFullRes, vio_manager);
   publish_img_rgb(pubImage, vio_manager);
 
+  {
+    cv::Mat img_origin = vio_manager->img_origin;
+    double scale = vio_manager->image_resize_factor;
+    if (scale != 1.0)
+      cv::resize(img_origin, img_origin, cv::Size(), scale, scale, cv::INTER_LINEAR);
+    cv_bridge::CvImage out_msg;
+    out_msg.header.stamp = rclcpp::Time(static_cast<int64_t>(LidarMeasures.last_lio_update_time * 1e9));
+    out_msg.encoding = sensor_msgs::image_encodings::BGR8;
+    out_msg.image = img_origin;
+    pubOriginImage.publish(out_msg.toImageMsg());
+  }
+
   euler_cur = RotMtoEuler(_state.rot_end);
   fout_out << std::setw(20) << LidarMeasures.last_lio_update_time - _first_lidar_time << " " << euler_cur.transpose() * 57.3 << " "
             << _state.pos_end.transpose() << " " << _state.vel_end.transpose() << " " << _state.bias_g.transpose() << " "
@@ -510,6 +524,14 @@ void LIVMapper::handleLIO()
     RGBpointBodyToWorld(&laserCloudFullRes->points[i], &laserCloudWorld->points[i]);
   }
   *pcl_w_wait_pub = *laserCloudWorld;
+
+  {
+    sensor_msgs::msg::PointCloud2 laserCloudBodyMsg;
+    pcl::toROSMsg(*laserCloudFullRes, laserCloudBodyMsg);
+    laserCloudBodyMsg.header.stamp = rclcpp::Time(static_cast<int64_t>(LidarMeasures.last_lio_update_time * 1e9));
+    laserCloudBodyMsg.header.frame_id = "camera_init";
+    pubLaserCloudFullResBody->publish(laserCloudBodyMsg);
+  }
 
   publish_frame_world(pubLaserCloudFullRes, vio_manager);
   if (pub_effect_point_en) publish_effect_world(pubLaserCloudEffect, voxelmap_manager->ptpl_list_);
