@@ -5,8 +5,9 @@
       lid_topic: "/ouster/points"
       imu_topic: "/ouster/imu"
       img_en: 1
+      
       lidar_en: 1
-      ros_driver_bug_fix: true
+      ros_driver_bug_fix: false
 
     extrin_calib:
       # IMU frame coincides with LiDAR frame (Ouster built-in IMU)
